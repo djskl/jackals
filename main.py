@@ -1,6 +1,7 @@
+# encoding: utf-8
 import uwsgi
-
 import re
+import uuid
 from jinja2 import Environment, FileSystemLoader
 
 def home(env, rs):
@@ -8,6 +9,7 @@ def home(env, rs):
     tmpl_env = Environment(loader = FileSystemLoader("./"))
     template = tmpl_env.get_template("index.html")
     html = template.render(server_name=env["HTTP_HOST"])
+    html = html if isinstance(html, str) else html.encode("utf-8")
     return str(html)
     
 def foobar(env, rs):
@@ -15,6 +17,9 @@ def foobar(env, rs):
     while True:
         msg = uwsgi.websocket_recv()
         uwsgi.websocket_send(msg)
+        
+def task_new(env, rs):
+    pass
 
 def application(env, rs):
     
