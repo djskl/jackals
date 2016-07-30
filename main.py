@@ -1,8 +1,7 @@
 # encoding: utf-8
-import uwsgi
 import re
-import uuid
 from jinja2 import Environment, FileSystemLoader
+from uwsgi_ws_server import uWSGIWebsocketServer
 
 def home(env, rs):
     rs("200 OK", [("Content-Type", "text/html")])
@@ -11,25 +10,18 @@ def home(env, rs):
     html = template.render(server_name=env["HTTP_HOST"])
     html = html if isinstance(html, str) else html.encode("utf-8")
     return str(html)
-    
-def foobar(env, rs):
-    uwsgi.websocket_handshake(env['HTTP_SEC_WEBSOCKET_KEY'], env.get('HTTP_ORIGIN', ''))
-    while True:
-        msg = uwsgi.websocket_recv()
-        uwsgi.websocket_send(msg)
-        
-def task_new(env, rs):
-    pass
 
-def application(env, rs):
+def application(env, sr):
     
     url = env["PATH_INFO"]
     
+    ws_server = uWSGIWebsocketServer()
+    
     if re.match(r"^/$", url):
-        return home(env, rs)
+        return home(env, sr)
     
     if re.match(r"^/foobar", url):
-        foobar(env, rs)
+        ws_server(env, sr)
     
     
 
