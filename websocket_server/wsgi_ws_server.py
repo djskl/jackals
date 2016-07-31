@@ -56,39 +56,36 @@ class WSGIWebsocketServer(object):
         self._redis_conn = redis.StrictRedis()
     
     def __call__(self, env, sr):
-            
+        
         channel = make_redis_channels(env["PATH_INFO"])
         
         if not channel:
             raise Exception("path_info is invalid")
         
         sub = Subscriber()
-        
         sub.subscribe(channel)
         
-        print "channel", channel
+        ws = self.upgrade_websocket(env, sr)
         
-        websocket = self.upgrade_websocket(env, sr)
-        
-        while websocket and not websocket.closed:
+        while ws and not ws.closed:
             
-            ws_fd = websocket.get_file_descriptor()
+            ws_fd = ws.get_file_descriptor()
             rd_fd = sub.get_file_descriptor()
             
             ready = self.select([ws_fd, rd_fd], [], [], 4)
             
             if not ready[0]:
-                websocket.flush()
+                ws.flush()
             else:
                 for fd in ready[0]:
                     if fd == ws_fd:
-                        msg = websocket.receive()
+                        msg = ws.receive()
                         handle_client_msg(msg)
                         
                     elif fd == rd_fd:
                         msg = sub.get_message()
                         if msg:
-                            websocket.send(msg)
+                            ws.send(msg)
         
         
         
