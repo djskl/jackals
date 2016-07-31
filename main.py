@@ -1,7 +1,7 @@
 # encoding: utf-8
 import re
 from jinja2 import Environment, FileSystemLoader
-from uwsgi_ws_server import uWSGIWebsocketServer
+from websocket_server.uwsgi_ws_server import uWSGIWebsocketServer
 
 def home(env, rs):
     rs("200 OK", [("Content-Type", "text/html")])
@@ -20,7 +20,7 @@ def application(env, sr):
     if re.match(r"^/$", url):
         return home(env, sr)
     
-    if re.match(r"^/foobar", url):
+    if url.startswith("ws"):
         ws_server(env, sr)
     
     

@@ -6,8 +6,16 @@ def handle_client_msg(msg):
     print msg
 
 def make_redis_channels(path_info):
+    
+    if path_info.startswith("/"):
+        path_info = path_info[1:]
+        
+    if path_info.endswith("/"):
+        path_info = path_info[:-1]
+    
     if not path_info:
         return None
+    
     return "_".join(path_info.split("/"))
 
 
