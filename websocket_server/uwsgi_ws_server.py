@@ -24,7 +24,11 @@ class uWsgiWebSocket(object):
         '''
         possible to throw exceptions
         '''
-        return uwsgi.websocket_recv_nb()
+        try:
+            return uwsgi.websocket_recv_nb()
+        except IOError:
+            self.close()
+            return None
         
     def get_file_descriptor(self):
         if self._closed:

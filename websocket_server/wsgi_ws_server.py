@@ -3,7 +3,10 @@ import redis
 import threading
 
 def handle_client_msg(msg):
-    print msg
+    if msg:
+        print "receive message:", msg
+    else:
+        print "recevied an empty message"
 
 def make_redis_channels(path_info):
     
@@ -87,5 +90,6 @@ class WSGIWebsocketServer(object):
                         if msg:
                             ws.send(msg)
         
-        
+        return ""
+    
         
