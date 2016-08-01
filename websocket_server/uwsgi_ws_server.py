@@ -50,7 +50,7 @@ class uWSGIWebsocketServer(WSGIWebsocketServer):
     
     def upgrade_websocket(self, env, sr):
         
-        #if failed, plase ensure that the opensll has been installed(after installing it , re-install uwsgi) 
+        #**OpenSSL** is required (after installed, re-install uwsgi) 
         uwsgi.websocket_handshake(env['HTTP_SEC_WEBSOCKET_KEY'], env.get('HTTP_ORIGIN', ''))
             
         return uWsgiWebSocket()
