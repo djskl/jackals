@@ -2,5 +2,4 @@ uwsgi==2.0.13.1
 redis==2.10.5
 gevent==1.1.1
 websocket-client==0.37.0
-
 pika==0.10.0
