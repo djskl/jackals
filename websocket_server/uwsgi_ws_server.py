@@ -21,9 +21,6 @@ class uWsgiWebSocket(object):
             return False
         
     def receive(self):
-        '''
-        possible to throw exceptions
-        '''
         try:
             return uwsgi.websocket_recv_nb()
         except IOError:

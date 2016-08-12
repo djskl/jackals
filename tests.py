@@ -4,35 +4,13 @@ Created on Jul 31, 2016
 @author: root
 '''
 import unittest
-from websocket import create_connection
-import redis
-from utils import make_channel
-
-class Test(unittest.TestCase):
-
-    def setUp(self):
-        self.path_info = "foobar"
-        self.ws_client = create_connection("ws://127.0.0.1/%s"%self.path_info)
-        self.redis_conn = redis.StrictRedis()
-        
-    def tearDown(self):
-        self.ws_client.close()
-        
-    def test_ws_send(self):
-        msg = "hello"
-        length = self.ws_client.send(msg)
-        self.assertEqual(length, len(msg)+6)
-        
-    def test_redis_channel(self):
-        self._channel = make_channel(self.path_info)
-        self.redis_conn.publish(self._channel, "hello")
-                
-        msg = self.ws_client.recv() # TODO: timeout
-        
-        self.assertEquals(msg, "hello")
+from websocket_server.tests import TestWebsocket
+from celery_server.tests import TestSubmitTask
         
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
+    suite1 = unittest.TestLoader().loadTestsFromTestCase(TestWebsocket)
+    suite2 = unittest.TestLoader().loadTestsFromTestCase(TestSubmitTask)
+    alltests = unittest.TestSuite([suite1, suite2])
+    unittest.TextTestRunner(verbosity=2).run(alltests)
     
     
