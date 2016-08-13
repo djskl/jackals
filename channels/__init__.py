@@ -19,11 +19,15 @@ class RedisChannel(object):
     def unsubscribe(self, *channels):
         self._pubsub.unsubscribe(*channels)
     
-    def publish(self, cname, message):
+    def publish(self, cname, message, new=False):
         if cname in self._pubsub.channels:
-            self._redis_conn.publish(cname, message)
-            return True
-        return False
+            return self._redis_conn.publish(cname, message)
+        
+        if new:
+            self.subscribe(cname)
+            return self._redis_conn.publish(cname, message)
+        
+        return 0
     
     def get_message(self, cname):
         if cname in self._pubsub.channels:

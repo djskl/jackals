@@ -11,7 +11,13 @@ class TestSubmitTask(unittest.TestCase):
     def test_submit_task(self):
         
         def f():
-            return "hello, world"
+            import subprocess
+            p1 = subprocess.Popen(["ls", "-l", "/tmp/"], stdout=subprocess.PIPE)
+            p2 = subprocess.Popen(["wc", "-l"], stdin=p1.stdout, stdout=subprocess.PIPE)
+            
+            outs, errs = p2.communicate()
+            
+            return outs
         
         func_info = {
             "name": pickle.dumps(f.func_name),
@@ -27,4 +33,6 @@ class TestSubmitTask(unittest.TestCase):
         self.assertEqual(msg, "hello, world")
         
 if __name__ == "__main__":
-    unittest.main()        
+    unittest.main()       
+    
+     

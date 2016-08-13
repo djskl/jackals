@@ -17,24 +17,37 @@ platforms.C_FORCE_ROOT = True
 def add(x, y):
     return x + y
 
-import marshal
-import pickle
-import json
-import types
+
+import subprocess
+import redis
+import gevent.select
 
 @app.task(name="celery_server.app.script_worker")
-def script_worker(funcs):
+def script_worker(taskid, script_file, *args, **kwargs):
+    if script_file.endswith("pyc"):
+        script_file = script_file[:-1]
     
-    f_obj = json.loads(funcs)
+    if not script_file.endswith("py"):
+        return None
     
-    f = types.FunctionType(
-        marshal.loads(f_obj["code"]),
-        globals(),
-        pickle.loads(f_obj["name"]),
-        pickle.loads(f_obj["args"]),
-        pickle.loads(f_obj["closure"])
-    )
+    _cmd = ["python", script_file] + [str(arg) for arg in args]
+    for k, v in kwargs:
+        _cmd.append("-"+k+" "+v)
     
-    return f()
+    p = subprocess.Popen(_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+    conn = redis.StrictRedis()
+    chan = conn.pubsub()
+    channel_name = taskid+"_logs"
+    chan.subscribe(channel_name)
     
+    for line in iter(p.stdout.readline, ""):
+        if line.endswith("\n"):
+            line = line[:-1]
+        conn.publish(channel_name, line)
+          
+    for line in iter(p.stderr.readline, ""):
+        if line.endswith("\n"):
+            line = line[:-1]
+        conn.publish(channel_name, line)
 
