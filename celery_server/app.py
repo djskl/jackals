@@ -41,6 +41,8 @@ def script_worker(self, script_file, *args, **kwargs):
     conn = redis.StrictRedis()
     channel_name = taskid + "_logs"
     
+    logger.info("channel_name: %s"%channel_name)
+    
     logger.info("start...")
     
     for line in iter(p.stdout.readline, ""):

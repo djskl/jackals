@@ -12,7 +12,19 @@ class WSGIWebsocketServer(object):
     
     def __call__(self, env, sr):
         
-        channel_name = make_channel(env["PATH_INFO"])
+#         channel_name = make_channel(env["PATH_INFO"])
+
+        path_info = env["PATH_INFO"]
+        
+        if path_info.startswith("/"):
+            path_info = path_info[1:]
+            
+        if path_info.endswith("/"):
+            path_info = path_info[:-1]
+        
+        channel_name = path_info + "_logs"
+        
+        print "channel_name", channel_name
         
         if not channel_name:
             raise Exception("path_info is invalid")
