@@ -1,38 +1,37 @@
 import unittest
-
-import marshal
-import pickle
-import json
-
+import os
 from celery_server.app import script_worker
+import uuid
+from channels import RedisChannel
+from time import sleep
 
 class TestSubmitTask(unittest.TestCase):
     
+    def setUp(self):
+        self.pyname = "/tmp/test_submit_task.py"
+        codes = "print 'hello,world'"
+        with open(self.pyname, "w") as writer:
+            writer.write(codes)
+            
+    def tearDown(self):
+        if os.path.exists(self.pyname):
+            os.remove(self.pyname)
+    
     def test_submit_task(self):
+        taskid = str(uuid.uuid4())
         
-        def f():
-            import subprocess
-            p1 = subprocess.Popen(["ls", "-l", "/tmp/"], stdout=subprocess.PIPE)
-            p2 = subprocess.Popen(["wc", "-l"], stdin=p1.stdout, stdout=subprocess.PIPE)
-            
-            outs, errs = p2.communicate()
-            
-            return outs
+        chan = RedisChannel()
+        channel_name = taskid+"_logs"
+        chan.subscribe(channel_name)
         
-        func_info = {
-            "name": pickle.dumps(f.func_name),
-            "args": pickle.dumps(f.func_defaults),
-            "closure": pickle.dumps(f.func_closure),
-            "code": marshal.dumps(f.func_code)
-        }
+        script_worker.apply_async([self.pyname], task_id=taskid)
         
-        rst = script_worker.delay(json.dumps(func_info))
+        sleep(0.3)
         
-        msg = rst.get(timeout=10)
+        msg = chan.get_message(channel_name)
         
-        self.assertEqual(msg, "hello, world")
+        self.assertEqual(msg, "hello,world")
+        
         
 if __name__ == "__main__":
-    unittest.main()       
-    
-     
+    unittest.main()
