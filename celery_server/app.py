@@ -58,3 +58,6 @@ def script_worker(self, script_file, *args, **kwargs):
         logger.info(line)
 
     logger.info("finish!!!")
+    
+    
+    

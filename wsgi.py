@@ -5,6 +5,8 @@ from jinja2 import Environment, FileSystemLoader
 from websocket_server.uwsgi_ws_server import uWSGIWebsocketServer
 from celery_server.app import script_worker
 
+import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_5.1.2.201606231256/pysrc')
+
 def home(env, rs, taskid):
     rs("200 OK", [("Content-Type", "text/html")])
     tmpl_env = Environment(loader = FileSystemLoader("./templates"))
@@ -14,8 +16,10 @@ def home(env, rs, taskid):
     return str(html)
 
 def application(env, sr):
-    
+        
     url = env["PATH_INFO"]
+    
+    import pydevd;pydevd.settrace()
     
     if re.match(r"^/$", url):
         
