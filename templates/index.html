@@ -1,46 +1,52 @@
 <html>
-  <head>
+  	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  		<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+  		<style>
+  			.new-task-panel{
+  				width: 380px;
+    			margin: auto;
+    			margin-top: 20px;
+  			}
+  		</style>
+  	</head>
   
-  	<style>
-  		#blackboard{
-  			width:640px;
-  			height:480px;
-  			background-color:black;
-  			color:white;
-  			border: solid 2px red;
-  			overflow:auto
-  		}
-  	</style>
-  
-      <script>
-      
-        var s = new WebSocket("ws://{{server_name}}/{{taskid}}");
-        
-        s.onopen = function() {
-    		var bb = document.getElementById('blackboard')
-    		var html = bb.innerHTML;
-    		bb.innerHTML = "start...";        	
-        };
-        
-        s.onmessage = function(e) {
-    		var bb = document.getElementById('blackboard')
-    		var html = bb.innerHTML;
-    		bb.innerHTML = html + '<br/>' + e.data;
-        };
-        
-    	s.onerror = function(e) {
-        	alert(e);
-    	};
-    	
-		s.onclose = function(e) {
-		    alert("connection closed");
-		};
-        
-      </script>
- </head>
-<body>
-    <h1>WebSocket</h1>
-	<div id="blackboard">
-</div>
-</body>
+	<body>
+		<div class="container-fluid new-task-panel">
+			<div class="row">
+				<div class="col-md-12">
+					<form method="post" id="task-form" enctype="multipart/form-data">
+					  <div class="form-group">
+					    <label>任务名称：</label>
+					    <input class="form-control" placeholder="不超过32个字符" name="task-title">
+					  </div>
+					  <div class="form-group">
+					    <label>脚本文件</label>
+					    <input type="file" name="task-script-file" accept=".py">
+					  </div>
+					  <button type="submit" class="btn btn-default">提交</button>
+					</form>
+				</div>
+			</div>
+		</div>
+		<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+		<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+		
+		<script>
+			$(function(){
+				$("#task-form").submit(function(){
+					$(this).ajaxSubmit({  
+		                type:"post",
+		                url:"/submit_task",  
+		                success:function(data){
+		                	debugger;
+		                }  
+		            });  
+		            return false;
+				});
+			});	
+		</script>
+		
+	</body>
+	
 </html>

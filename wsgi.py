@@ -1,37 +1,33 @@
 # encoding: utf-8
-import re
-import uuid
-from jinja2 import Environment, FileSystemLoader
+import views
 from websocket_server.uwsgi_ws_server import uWSGIWebsocketServer
-from celery_server.app import script_worker
 
-import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_5.1.2.201606231256/pysrc')
-
-def home(env, rs, taskid):
-    rs("200 OK", [("Content-Type", "text/html")])
-    tmpl_env = Environment(loader = FileSystemLoader("./templates"))
-    template = tmpl_env.get_template("index.html")
-    html = template.render(server_name=env["HTTP_HOST"], taskid=taskid)
-    html = html if isinstance(html, str) else html.encode("utf-8")
-    return str(html)
-
-def application(env, sr):
-        
-    url = env["PATH_INFO"]
+def url_dispatch(path_info):
     
-    import pydevd;pydevd.settrace()
+    uname = path_info.replace("\.", "_")
     
-    if re.match(r"^/$", url):
-        
-        script_file = "/tmp/ces.py"
-        taskid = str(uuid.uuid4())
-        script_worker.apply_async([script_file], task_id=taskid)
-        
-        return home(env, sr, taskid)
+    if not path_info:
+        uname = "home"
+    
+    func = getattr(views, uname, None)
+    if not func:
+        return None
+    
+    return func
+
+def application(env, rs):
     
     if env.get("HTTP_UPGRADE")=="websocket" or env.get("wsgi.url_scheme")=="ws":
         ws_server = uWSGIWebsocketServer()
-        return ws_server(env, sr)
+        return ws_server(env, rs)
     
-    
-
+    path_info = env["PATH_INFO"]
+    if path_info.startswith("/"):
+        path_info = path_info[1:]
+        
+    func = url_dispatch(path_info)
+    if not func:
+        rs("404 Not Found", [("Content-Type", "text/html")])
+        return ""
+        
+    return func(env, rs)

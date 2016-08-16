@@ -25,3 +25,18 @@ def make_channel(path_info):
         return None
     
     return "%s_%s"%(CHANNEL_PREFIX, "_".join(path_info.split("_")))
+
+import cgi
+def parse_wsgi_post(env):
+    
+    post_env = env.copy()
+    post_env['QUERY_STRING'] = ''
+    
+    params = cgi.FieldStorage(
+        fp=env['wsgi.input'],
+        environ=post_env,
+        keep_blank_values=True
+    )
+    
+    return params
+
