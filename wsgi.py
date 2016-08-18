@@ -1,6 +1,7 @@
 # encoding: utf-8
 import views
 from websocket_server.uwsgi_ws_server import uWSGIWebsocketServer
+from http.request import HttpRequest
 
 def url_dispatch(path_info):
     
@@ -29,5 +30,9 @@ def application(env, rs):
     if not func:
         rs("404 Not Found", [("Content-Type", "text/html")])
         return ""
-        
-    return func(env, rs)
+    
+    request = HttpRequest(env)
+    
+    response = func(request)
+    
+    pass
