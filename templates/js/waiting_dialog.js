@@ -1,6 +1,6 @@
 
 var _dialog_html = [
-'<div class="modal fade" id="waiting-dialog-modal">', 
+'<div class="modal fade" id="waiting-dialog-modal" style="overflow: hidden;">', 
 '  <div class="modal-dialog modal-sm" style="height: 150px; width: 150px;">', 
 '    <div class="modal-content" style="border: none;">', 
 '       <div id="loading">', 
@@ -12,14 +12,16 @@ var _dialog_html = [
 '                   <div class="object" id="object_one"></div>', 
 '               </div>', 
 '           </div>', 
+'			<div style="text-align: center; color: #901f3e; font-size: 18px;">正 在 提 交...</div>',
 '       </div>', 
 '    </div>', 
 '  </div>', 
 '</div>'].join("");
 
-
 var show_waiting_dialog = function(){
-	$("body").append(_dialog_html);
+	if($("#waiting-dialog-modal").length==0){
+		$("body").append(_dialog_html);
+	}
 	$("#waiting-dialog-modal").modal({
 		backdrop: 'static',
 		keyboard: false
@@ -27,5 +29,5 @@ var show_waiting_dialog = function(){
 };
 
 var close_waiting_dialog = function(){
-	
+	$('#waiting-dialog-modal').modal('hide');
 };

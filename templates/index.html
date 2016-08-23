@@ -2,14 +2,11 @@
   	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   		<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+  		
   		<style>
-  			.new-task-panel{
-  				width: 380px;
-    			margin: auto;
-    			margin-top: 20px;
-  			}
-  		</style>
-  		  		
+			{% include "css/main.css" %}
+		</style>
+		  		  		
   	</head>
   
 	<body>
@@ -35,18 +32,30 @@
 		<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 		
 		<script>
-			$(function(){
+		
+			$(function(){			
+				
 				$("#submit-btn").on("click", function(){
-					$("#task-form").ajaxSubmit({  
-		                type:"post",
-		                url:"/submit_task",  
-		                success:function(data){
-		                	debugger;
-		                }  
+					
+					show_waiting_dialog();
+					
+ 					$("#task-form").ajaxSubmit({
+		                type: "post",
+		                url: "/submit_task",  
+		                success: function(data){
+		                	close_waiting_dialog();
+		                },
+		                error: function(xhr, code, what){
+		                	close_waiting_dialog();
+		                }
 		            });  
-		            return false;					
+		            return false;		
 				});
-			});	
+			});
+			
+			{% include "js/utils.js" %}
+			{% include "js/waiting_dialog.js" %}
+			
 		</script>
 		
 	</body>
