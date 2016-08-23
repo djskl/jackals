@@ -5,6 +5,7 @@ import utils
 import uuid
 import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_5.1.2.201606231256/pysrc')
 import os
+from const import TaskStatus
 from settings import SCRIPT_ROOT
 # import pydevd;pydevd.settrace()
 
@@ -24,8 +25,8 @@ def submit_task(env, rs):
     task_script = params.getvalue("task-script-file")
     
     if not task_script or not task_title:
-        rs("400 Bad Request", [("Content-Type", "text/html")])
-        return ""
+        rs("200 OK", [("Content-Type", "text/html")])
+        return TaskStatus.CREATE_ERR
     
     taskid = str(uuid.uuid4())
     script_file = os.path.join(SCRIPT_ROOT, "%s.py"%taskid)

@@ -31,8 +31,6 @@ def application(env, rs):
         rs("404 Not Found", [("Content-Type", "text/html")])
         return ""
     
-    request = HttpRequest(env)
+    response = func(env, rs)
     
-    response = func(request)
-    
-    pass
+    return response
