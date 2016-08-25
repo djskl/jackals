@@ -7,6 +7,7 @@ import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_5.1.2.2
 import os
 from const import TaskStatus
 from settings import SCRIPT_ROOT
+import json
 # import pydevd;pydevd.settrace()
 
 def home(env, rs):
@@ -25,8 +26,11 @@ def submit_task(env, rs):
     task_script = params.getvalue("task-script-file")
     
     if not task_script or not task_title:
-        rs("200 OK", [("Content-Type", "text/html")])
-        return TaskStatus.CREATE_ERR
+        rs("200 OK", [("Content-Type", "application/json")])
+        return json.dumps({
+            "code": TaskStatus.CREATE_ERR,
+            "info": "incomplete task info!"
+        })
     
     taskid = str(uuid.uuid4())
     script_file = os.path.join(SCRIPT_ROOT, "%s.py"%taskid)

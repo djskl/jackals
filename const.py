@@ -1,8 +1,8 @@
 
 class Const(type):
     warning = 'This class is immutable.'
-    def __setattr__(cls, k, v):
-        raise AttributeError(cls.warning)
+    def __setattr__(self, k, v):
+        raise AttributeError(self.warning)
 
 TaskStatus = Const("TaskStatus", (), {
     "SUCCESS": 0,

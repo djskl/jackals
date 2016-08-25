@@ -27,13 +27,14 @@
 				</div>
 			</div>
 		</div>
+						
 		<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
 		<script src="//oss.maxcdn.com/jquery.form/3.50/jquery.form.min.js"></script>
 		<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 		
 		<script>
 		
-			$(function(){			
+			$(function(){
 				
 				$("#submit-btn").on("click", function(){
 					
@@ -41,12 +42,25 @@
 					
  					$("#task-form").ajaxSubmit({
 		                type: "post",
-		                url: "/submit_task",  
+		                url: "/submit_task",
+		                dataType: "json",
 		                success: function(data){
+		                	
 		                	close_waiting_dialog();
+		                	
+		                	if(data.code == 0){
+		                		
+		                	}else{
+		                		show_error_dialog("任务创建失败",
+		                				"请检查任务信息是否完整且准确！");
+		                	}
+		                	
 		                },
 		                error: function(xhr, code, what){
+		                	debugger;
 		                	close_waiting_dialog();
+	                		show_error_dialog("任务创建失败",
+            						"服务器内部错误，请联系管理员！");
 		                }
 		            });  
 		            return false;		
@@ -54,7 +68,7 @@
 			});
 			
 			{% include "js/utils.js" %}
-			{% include "js/waiting_dialog.js" %}
+			{% include "js/dialogs.js" %}
 			
 		</script>
 		
