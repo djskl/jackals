@@ -31,7 +31,9 @@ def script_worker(self, script_file, *args, **kwargs):
         return None
     
     taskid = self.request.id
-    
+
+#     taskid = "123456"
+     
     _cmd = ["python", "-u", script_file] + [str(arg) for arg in args]
     for k, v in kwargs:
         _cmd.append("-"+k+" "+v)
@@ -39,7 +41,10 @@ def script_worker(self, script_file, *args, **kwargs):
     p = subprocess.Popen(_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     conn = redis.StrictRedis()
+    
     channel_name = taskid + "_logs"
+    
+    print "channel_name", channel_name
     
     logger.info("channel_name: %s"%channel_name)
     

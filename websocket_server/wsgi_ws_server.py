@@ -1,6 +1,5 @@
 import uwsgi
 from channels import RedisChannel
-from utils import make_channel
 
 def handle_client_msg(msg):
     if msg:

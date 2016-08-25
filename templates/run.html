@@ -1,6 +1,6 @@
 <html>
   <head>
-  
+  	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   	<style>
   		#blackboard{
   			width:640px;
@@ -19,7 +19,7 @@
         s.onopen = function() {
     		var bb = document.getElementById('blackboard')
     		var html = bb.innerHTML;
-    		bb.innerHTML = "start...";        	
+    		bb.innerHTML = "连接到服务器...";        	
         };
         
         s.onmessage = function(e) {

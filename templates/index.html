@@ -48,8 +48,8 @@
 		                	
 		                	close_waiting_dialog();
 		                	
-		                	if(data.code == 0){
-		                		
+		                	if(data.code == 2){
+		                		window.location.href="/show_task"
 		                	}else{
 		                		show_error_dialog("任务创建失败",
 		                				"请检查任务信息是否完整且准确！");

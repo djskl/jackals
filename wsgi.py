@@ -1,7 +1,6 @@
 # encoding: utf-8
 import views
 from websocket_server.uwsgi_ws_server import uWSGIWebsocketServer
-from http.request import HttpRequest
 
 def url_dispatch(path_info):
     
