@@ -45,11 +45,9 @@
 		                url: "/submit_task",
 		                dataType: "json",
 		                success: function(data){
-		                	
 		                	close_waiting_dialog();
-		                	
 		                	if(data.code == 2){
-		                		window.location.href="/show_task"
+		                		window.location.href="/show_task?taskid="+data["info"];
 		                	}else{
 		                		show_error_dialog("任务创建失败",
 		                				"请检查任务信息是否完整且准确！");
@@ -57,7 +55,6 @@
 		                	
 		                },
 		                error: function(xhr, code, what){
-		                	debugger;
 		                	close_waiting_dialog();
 	                		show_error_dialog("任务创建失败",
             						"服务器内部错误，请联系管理员！");

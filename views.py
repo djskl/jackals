@@ -33,15 +33,14 @@ def submit_task(env, rs):
             "info": "incomplete task info!"
         })
     
-    #taskid = str(uuid.uuid4())
-    taskid = "123456"
+    taskid = str(uuid.uuid4())
     
     script_file = os.path.join(SCRIPT_ROOT, "%s.py"%taskid)
     with open(script_file, "w") as writer:
         writer.write(task_script)
         
     #script_worker.delay(script_file)
-    script_worker.apply_async(task_id=taskid)
+    script_worker.apply_async([script_file], task_id=taskid)
     
     rs("200 OK", [("Content-Type", "application/json")])
     return json.dumps({
@@ -50,13 +49,27 @@ def submit_task(env, rs):
     })
 
 
-def show_task(env, rs):
+def show_task(env, sr):
+    
+    params = utils.parse_wsgi_get(env)
+    
+    task_id = params.get("taskid")
+    if not task_id:
+        sr("404 NOT FOUND", [("Content-Type", "text/html")])
+        return ""
+    
     tmpl_env = Environment(loader = FileSystemLoader("./templates"))
     template = tmpl_env.get_template("run.html")
-    html = template.render(server_name=env["HTTP_HOST"], taskid="123456")
+    
+    kwargs = {
+        "server_name": env["HTTP_HOST"],
+        "taskid": task_id,
+        "title": task_id
+    }
+    html = template.render(**kwargs)
     html = html if isinstance(html, str) else html.encode("utf-8")
     
-    rs("200 OK", [("Content-Type", "text/html")])
+    sr("200 OK", [("Content-Type", "text/html")])
     return str(html)
     
 

@@ -40,3 +40,18 @@ def parse_wsgi_post(env):
     
     return params
 
+import urlparse
+def parse_wsgi_get(env):
+    qs = env['QUERY_STRING']
+    params = urlparse.parse_qs(qs)
+    
+    for k in params:
+        params[k] = params[k][0]
+        
+    return params
+    
+    
+    
+    
+
+
