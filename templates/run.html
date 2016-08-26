@@ -8,7 +8,7 @@
   			background-color:black;
   			color:white;
   			border: solid 2px red;
-  			overflow:auto
+  			overFlow-y:scroll
   		}
   	</style>
   
@@ -26,6 +26,7 @@
     		var bb = document.getElementById('blackboard')
     		var html = bb.innerHTML;
     		bb.innerHTML = html + '<br/>' + e.data;
+    		bb.scrollTop = bb.scrollHeight; 
         };
         
     	s.onerror = function(e) {
