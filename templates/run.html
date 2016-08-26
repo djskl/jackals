@@ -1,47 +1,70 @@
 <html>
-  <head>
-  	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  	<style>
-  		#blackboard{
-  			width:640px;
-  			height:480px;
-  			background-color:black;
-  			color:white;
-  			border: solid 2px red;
-  			overFlow-y:scroll
-  		}
-  	</style>
-  
-      <script>
-      
-        var s = new WebSocket("ws://{{server_name}}/{{taskid}}");
-        
-        s.onopen = function() {
-    		var bb = document.getElementById('blackboard')
-    		var html = bb.innerHTML;
-    		bb.innerHTML = "连接到服务器...";        	
-        };
-        
-        s.onmessage = function(e) {
-    		var bb = document.getElementById('blackboard')
-    		var html = bb.innerHTML;
-    		bb.innerHTML = html + '<br/>' + e.data;
-    		bb.scrollTop = bb.scrollHeight; 
-        };
-        
-    	s.onerror = function(e) {
-        	alert(e);
-    	};
-    	
-		s.onclose = function(e) {
-		    alert("connection closed");
-		};
-        
-      </script>
- </head>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<style>
+.logs-area {
+	width: 700px;
+	margin: auto;
+	margin-top: 50px;
+}
+
+#blackboard {
+	width: 700px;
+	height: 600px;
+	background-color: black;
+	color: white;
+	overFlow-y: scroll;
+}
+</style>
+
+<script>
+	var s = new WebSocket("ws://{{server_name}}/{{taskid}}");
+
+	s.onopen = function() {
+		var bb = document.getElementById('blackboard')
+		var html = bb.innerHTML;
+		bb.innerHTML = "连接到服务器...";
+	};
+
+	s.onmessage = function(e) {
+		var bb = document.getElementById('blackboard')
+		var html = bb.innerHTML;
+		bb.innerHTML = html + '<br/>' + e.data;
+		bb.scrollTop = bb.scrollHeight;
+	};
+
+	s.onerror = function(e) {
+		alert(e);
+	};
+
+	s.onclose = function(e) {
+		alert("connection closed");
+	};
+</script>
+</head>
+
 <body>
-    <h1>任务：{{title}}</h1>
-	<div id="blackboard">
-</div>
+
+	<div class="container-fluid logs-area">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="panel panel-default">
+					<div class="panel-heading" style="padding-top: 5px;height: 40px;">
+						<h3 class="panel-title" style="display: inline-block;padding-top: 5px;">任务：{{title}}</h3>
+						<button type="button" class="btn btn-danger" style="display: inline-block;">停止</button>
+					</div>
+					<div id="blackboard" class="panel-body"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+	<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+
 </body>
+
 </html>
