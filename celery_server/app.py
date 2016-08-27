@@ -18,25 +18,6 @@ platforms.C_FORCE_ROOT = True
 
 logger = get_task_logger(__name__)
 
-@app.task(name="celery_server.app.add")
-def add(x, y):
-    return x + y
-
-
-from celery import Task
-
-class NaiveAuthenticateServer(Task):
-
-    def __init__(self):
-        self.users = {'george': 'password'}
-
-    def run(self, username, password):
-        try:
-            return self.users[username] == password
-        except KeyError:
-            return False
-
-
 import subprocess
 import redis
 
@@ -81,12 +62,16 @@ def script_worker(self, script_file, *args, **kwargs):
         _cmd.append("-"+k+" "+v)
         
     p = subprocess.Popen(_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+        
     conn = redis.StrictRedis()
     
     channel_name = taskid + "_logs"
     
-    print "channel_name", channel_name
+    conn.publish(channel_name, json.dumps({
+        "type": "STATUS",
+        "message": TaskStatus.RUNING,
+        "pid": p.pid
+    }))
     
     logger.info("channel_name: %s"%channel_name)
     
@@ -99,11 +84,6 @@ def script_worker(self, script_file, *args, **kwargs):
         conn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
-        }))
-        
-        conn.publish(channel_name, json.dumps({
-            "type": "STATUS",
-            "message": TaskStatus.RUNING
         }))
         
         logger.info(line)

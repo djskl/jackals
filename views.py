@@ -7,8 +7,9 @@ import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.2
 import os
 from const import TaskStatus
 from settings import SCRIPT_ROOT
-from celery_server.app import script_worker, handle_finish, handle_error
+from celery_server.app import script_worker, handle_finish, handle_error, app
 import json
+import signal
 # import pydevd;pydevd.settrace()
 
 def home(env, rs):
@@ -44,12 +45,7 @@ def submit_task(env, rs):
     with open(script_file, "w") as writer:
         writer.write(task_script)
         
-    script_worker.apply_async(
-        [script_file],
-        task_id=taskid,
-        link = handle_finish.s(taskid),
-        link_error = handle_error.s(taskid)
-    )
+    script_worker.apply_async([script_file], task_id=taskid, link = handle_finish.s(taskid), link_error = handle_error.s(taskid))
     
     rs("200 OK", [("Content-Type", "application/json")])
     return json.dumps({
@@ -59,12 +55,19 @@ def submit_task(env, rs):
     
 
 def stop_task(env, sr):
+    params = utils.parse_wsgi_post(env)
     
-    params = utils.parse_wsgi_get(env)
+    taskid = params.getvalue("taskid")
+    pid = params.getvalue("pid")
     
-    task_id = params.get("taskid")
+    if pid:
+        os.kill(pid, signal.SIGTERM)
     
+    elif taskid:
+        app.control.revoke(taskid)  
     
+    sr("200 OK", [("Content-Type", "text/html")])
+    return ""    
 
 def show_task(env, sr):
     
