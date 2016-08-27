@@ -1,5 +1,8 @@
 from celery import Celery, platforms
 from celery.utils.log import get_task_logger
+import json
+
+from const import TaskStatus
 
 app = Celery('ctasks')
 
@@ -8,8 +11,7 @@ app.conf.update(
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/1',
     CELERY_TASK_SERIALIZER = 'json',
     CELERY_RESULT_SERIALIZER = 'json',
-    CELERY_ACCEPT_CONTENT=['json']
-                  
+    CELERY_ACCEPT_CONTENT=['json']         
 )
 
 platforms.C_FORCE_ROOT = True
@@ -20,19 +22,59 @@ logger = get_task_logger(__name__)
 def add(x, y):
     return x + y
 
+
+from celery import Task
+
+class NaiveAuthenticateServer(Task):
+
+    def __init__(self):
+        self.users = {'george': 'password'}
+
+    def run(self, username, password):
+        try:
+            return self.users[username] == password
+        except KeyError:
+            return False
+
+
 import subprocess
 import redis
+
+@app.task(name="celery_server.app.handle_error")
+def handle_error(returncode, taskid):
+    conn = redis.StrictRedis()
+    channel_name = taskid + "_logs"
+    conn.publish(channel_name, json.dumps({
+        "type": "STATUS",
+        "message": TaskStatus.FAILED
+    }))
+
+@app.task(name="celery_server.app.handle_finish")
+def handle_finish(returncode, taskid):
+    conn = redis.StrictRedis()
+    channel_name = taskid + "_logs"
+    
+    if returncode == 0:
+        conn.publish(channel_name, json.dumps({
+            "type": "STATUS",
+            "message": TaskStatus.SUCCESS
+        }))
+    else:
+        conn.publish(channel_name, json.dumps({
+            "type": "STATUS",
+            "message": TaskStatus.FAILED
+        }))
+
 @app.task(bind=True, name="celery_server.app.script_worker")
 def script_worker(self, script_file, *args, **kwargs):
+    
     if script_file.endswith("pyc"):
         script_file = script_file[:-1]
     
     if not script_file.endswith("py"):
-        return None
+        return -1
     
     taskid = self.request.id
-
-#     taskid = "123456"
      
     _cmd = ["python", "-u", script_file] + [str(arg) for arg in args]
     for k, v in kwargs:
@@ -53,16 +95,32 @@ def script_worker(self, script_file, *args, **kwargs):
     for line in iter(p.stdout.readline, ""):
         if line.endswith("\n"):
             line = line[:-1]
-        conn.publish(channel_name, line)
+            
+        conn.publish(channel_name, json.dumps({
+            "type": "LOG",
+            "message": line
+        }))
+        
+        conn.publish(channel_name, json.dumps({
+            "type": "STATUS",
+            "message": TaskStatus.RUNING
+        }))
+        
         logger.info(line)
-     
+        
     for line in iter(p.stderr.readline, ""):
         if line.endswith("\n"):
             line = line[:-1]
-        conn.publish(channel_name, line)
+            
+        conn.publish(channel_name, json.dumps({
+            "type": "LOG",
+            "message": line
+        }))
+        
         logger.info(line)
-
+    
     logger.info("finish!!!")
     
-    
+    return p.poll()
+
     

@@ -18,6 +18,45 @@
 	color: white;
 	overFlow-y: scroll;
 }
+
+.TASK-STATUS{
+	font-size: 20px;
+	cursor: pointer;
+}
+
+.TASK-STATUS.active{
+	display: block;
+}
+
+/* 正在排队 */
+.TASK-PENDING{
+	color: #337ab7;	/* 深藍 */
+	display: none;
+}
+
+/* 正在运行 */
+.TASK-RUNNING{
+	color: #f0ad4e;	/* 橙色 */
+	display: none;
+}
+
+/* 失败 */
+.TASK-FAILED{
+	color: #d9534f; /* 紅色 */
+	display: none;
+}
+
+/* 超时 */
+.TASK-TIMEOUT{
+	color: #aa6708;	/* 褐色 */
+	display: none;	
+}
+
+/* 成功 */
+.TASK-SUCCESS{
+	color: #5cb85c;	/* 綠色 */
+	display: none;	
+}
 </style>
 
 </head>
@@ -29,10 +68,31 @@
 				<div class="panel panel-default">
 					<div class="panel-heading" style="padding-top: 5px;height: 40px;">
 						<h3 class="panel-title" style="display: inline-block;padding-top: 5px;">任务：{{title}}</h3>
-						<button id="stop-btn" type="button" class="btn btn-danger" style="display: inline-block;">停止</button>
+						<button id="stop-btn" type="button" class="btn btn-sm btn-danger" style="display: inline-block;float:right;">停止</button>
 					</div>
 					<div id="blackboard" class="panel-body"></div>
 				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-1" style="padding-right: 0px;">
+				<label>状态：</label>
+			</div>
+			<div class="col-md-11">
+				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-PENDING active"
+				 data-toggle="popover" data-trigger="focus" data-content="正在排队"></span>
+				 
+				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-RUNNING"
+				 data-toggle="popover" data-trigger="focus" data-content="正在运行"></span>
+				 
+				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-FAILED"
+				 data-toggle="popover" data-trigger="focus" data-content="失败"></span>
+				 
+				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-TIMEOUT"
+				 data-toggle="popover" data-trigger="focus" data-content="服务器响应超时"></span>
+				 
+				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-SUCCESS"
+				 data-toggle="popover" data-trigger="focus" data-content="成功"></span>
 			</div>
 		</div>
 	</div>
@@ -41,28 +101,72 @@
 	<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 
 	<script>
-		var s = new WebSocket("ws://{{server_name}}/{{taskid}}");	
+		
+		{% include "js/utils.js" %}
+		{% include "js/dialogs.js" %}
+				
+		$(function(){
+			
+			/* 弹出框提示当前状态 */
+			$(".TASK-STATUS").popover({
+				trigger: "hover"
+			});
+			
+			/* 终止当前任务 */
+			$("#stop-btn").on("click", function(){
+				if($("#stop-btn").prop("disabled")){
+					return;
+				}
+			});
+			
+		});
+	
+		var s = new WebSocket("ws://{{server_name}}/{{taskid}}");
+		
 		s.onopen = function() {
 			var bb = document.getElementById('blackboard')
 			var html = bb.innerHTML;
 			bb.innerHTML = "连接到服务器...";
-		};	
-		s.onmessage = function(e) {
-			var bb = document.getElementById('blackboard')
-			var html = bb.innerHTML;
-			bb.innerHTML = html + '<br/>' + e.data;
-			bb.scrollTop = bb.scrollHeight;
 		};
+		
+		/* https://developer.mozilla.org/en-US/docs/Web/API/MessageEvent */
+		s.onmessage = function(evt) {
+			
+			var obj = $.parseJSON(evt.data);
+			
+			if(obj == null){
+				return;
+			}
+			
+			if(obj.type == "STATUS"){
+				$(".TASK-STATUS.active").removeClass("active");
+				if(obj.message == STATUS.PENDING){
+					$(".TASK-PENDING").addClass("active");
+				}else if(obj.message == STATUS.RUNING){
+					$(".TASK-RUNNING").addClass("active");
+				}else if(obj.message == STATUS.FAILED){
+					$(".TASK-FAILED").addClass("active");
+					$("#stop-btn").prop("disabled", true);
+				}else if(obj.message == STATUS.TIMEOUT){
+					$(".TASK-TIMEOUT").addClass("active");
+					$("#stop-btn").prop("disabled", true);
+				}else if(obj.message == STATUS.SUCCESS){
+					$(".TASK-SUCCESS").addClass("active");
+					$("#stop-btn").prop("disabled", true);
+				}				
+			}else if(obj.type == "LOG"){
+				update_blackboard(obj.message);
+			}
+			
+		};
+		
 		s.onerror = function(e) {
 			alert(e);
 		};
-		s.onclose = function(e) {
-			alert("connection closed");
-		};
 		
-		$("#stop-btn").on("click", function(){
-			
-		});
+		s.onclose = function(e) {
+			alert("连接中断！");
+		};
 		
 	</script>
 </body>

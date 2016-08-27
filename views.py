@@ -7,14 +7,20 @@ import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.2
 import os
 from const import TaskStatus
 from settings import SCRIPT_ROOT
-from celery_server.app import script_worker
+from celery_server.app import script_worker, handle_finish, handle_error
+import json
 # import pydevd;pydevd.settrace()
 
 def home(env, rs):
     rs("200 OK", [("Content-Type", "text/html")])
     tmpl_env = Environment(loader = FileSystemLoader("./templates"))
     template = tmpl_env.get_template("index.html")
-    html = template.render(server_name=env["HTTP_HOST"])
+        
+    kwargs = {
+        "server_name": env["HTTP_HOST"],
+        "all_status": TaskStatus.list()
+    }
+    html = template.render(**kwargs)
     html = html if isinstance(html, str) else html.encode("utf-8")
     return str(html)
 
@@ -28,7 +34,7 @@ def submit_task(env, rs):
     if not task_script or not task_title:
         rs("200 OK", [("Content-Type", "application/json")])
         return json.dumps({
-            "code": TaskStatus.CREATE_ERR,
+            "status": TaskStatus.FAILED,
             "info": "incomplete task info!"
         })
     
@@ -38,11 +44,16 @@ def submit_task(env, rs):
     with open(script_file, "w") as writer:
         writer.write(task_script)
         
-    script_worker.apply_async([script_file], task_id=taskid)
+    script_worker.apply_async(
+        [script_file],
+        task_id=taskid,
+        link = handle_finish.s(taskid),
+        link_error = handle_error.s(taskid)
+    )
     
     rs("200 OK", [("Content-Type", "application/json")])
     return json.dumps({
-        "code": TaskStatus.PENDING,
+        "status": TaskStatus.PENDING,
         "info": taskid
     })
     
@@ -70,7 +81,8 @@ def show_task(env, sr):
     kwargs = {
         "server_name": env["HTTP_HOST"],
         "taskid": task_id,
-        "title": task_id
+        "title": task_id,
+        "all_status": TaskStatus.list()
     }
     html = template.render(**kwargs)
     html = html if isinstance(html, str) else html.encode("utf-8")
