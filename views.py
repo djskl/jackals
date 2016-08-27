@@ -7,7 +7,6 @@ import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.2
 import os
 from const import TaskStatus
 from settings import SCRIPT_ROOT
-import json
 from celery_server.app import script_worker
 # import pydevd;pydevd.settrace()
 
@@ -39,15 +38,22 @@ def submit_task(env, rs):
     with open(script_file, "w") as writer:
         writer.write(task_script)
         
-    #script_worker.delay(script_file)
     script_worker.apply_async([script_file], task_id=taskid)
     
     rs("200 OK", [("Content-Type", "application/json")])
     return json.dumps({
-        "code": TaskStatus.SUBMITED,
+        "code": TaskStatus.PENDING,
         "info": taskid
     })
+    
 
+def stop_task(env, sr):
+    
+    params = utils.parse_wsgi_get(env)
+    
+    task_id = params.get("taskid")
+    
+    
 
 def show_task(env, sr):
     

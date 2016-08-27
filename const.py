@@ -9,7 +9,7 @@ TaskStatus = Const("TaskStatus", (), {
     "FAILED": -1,
     "CREATE_ERR": -2,
     "RUNING": 1,
-    "SUBMITED": 2,
+    "PENDING": 2,
     "STARTED": 3,
     "KILLED": 4                                      
 })
