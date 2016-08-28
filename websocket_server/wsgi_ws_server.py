@@ -1,5 +1,5 @@
 import uwsgi
-from channels import RedisChannel
+from jackals.channels import RedisChannel
 
 def handle_client_msg(msg):
     if msg:

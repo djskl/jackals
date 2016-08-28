@@ -1,8 +1,7 @@
 from celery import Celery, platforms
 from celery.utils.log import get_task_logger
 import json
-
-from const import TaskStatus
+from jackals.const import TaskStatus
 
 app = Celery('ctasks')
 

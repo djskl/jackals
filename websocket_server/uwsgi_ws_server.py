@@ -1,7 +1,7 @@
 #encoding:utf-8
 import uwsgi
 import gevent.select
-from websocket_server.wsgi_ws_server import WSGIWebsocketServer
+from jackals.websocket_server.wsgi_ws_server import WSGIWebsocketServer
 
 class uWsgiWebSocket(object):
     

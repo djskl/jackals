@@ -3,13 +3,17 @@
 from jinja2 import Environment, FileSystemLoader
 import utils
 import uuid
-import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.201409251235/pysrc')
 import os
-from const import TaskStatus
-from settings import SCRIPT_ROOT
-from celery_server.app import script_worker, handle_finish, handle_error, app
 import json
 import signal
+
+from jackals.const import TaskStatus
+from jackals.celery_server.app import handle_error, handle_finish, script_worker,\
+    app
+
+from settings import SCRIPT_ROOT
+
+import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.201409251235/pysrc')
 # import pydevd;pydevd.settrace()
 
 def home(env, rs):

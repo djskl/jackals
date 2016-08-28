@@ -1,8 +1,12 @@
-import threading
+_cgi = __import__("cgi")
+_threading = __import__("threading")
+_urlparse = __import__("urlparse")
+
+__all__ = ["synchronized", "make_channel", "parse_wsgi_post", "parse_wsgi_get"]
 
 def synchronized(func):
     
-    _lock = threading.Lock()
+    _lock = _threading.Lock()
     
     def _wraper(*args, **kargs):
         try:
@@ -26,13 +30,12 @@ def make_channel(path_info):
     
     return "%s_%s"%(CHANNEL_PREFIX, "_".join(path_info.split("_")))
 
-import cgi
 def parse_wsgi_post(env):
     
     post_env = env.copy()
     post_env['QUERY_STRING'] = ''
     
-    params = cgi.FieldStorage(
+    params = _cgi.FieldStorage(
         fp=env['wsgi.input'],
         environ=post_env,
         keep_blank_values=True
@@ -40,10 +43,9 @@ def parse_wsgi_post(env):
     
     return params
 
-import urlparse
 def parse_wsgi_get(env):
     qs = env['QUERY_STRING']
-    params = urlparse.parse_qs(qs)
+    params = _urlparse.parse_qs(qs)
     
     for k in params:
         params[k] = params[k][0]

@@ -1,5 +1,5 @@
 import redis
-from utils import synchronized
+from jackals.utils import synchronized
 
 class RedisChannel(object):
     
