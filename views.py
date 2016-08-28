@@ -62,14 +62,14 @@ def stop_task(env, sr):
     params = utils.parse_wsgi_post(env)
     
     taskid = params.getvalue("taskid")
-    pid = params.getvalue("pid")
+    status = int(params.getvalue("status"))
     
-    if pid:
-        os.kill(pid, signal.SIGTERM)
+    if status == TaskStatus.PENDING:
+        app.control.revoke(str(taskid))
     
-    elif taskid:
-        app.control.revoke(taskid)  
-    
+    if status == TaskStatus.RUNING:
+        os.kill(int(taskid), signal.SIGKILL)
+        
     sr("200 OK", [("Content-Type", "text/html")])
     return ""    
 
@@ -81,6 +81,11 @@ def show_task(env, sr):
     if not task_id:
         sr("404 NOT FOUND", [("Content-Type", "text/html")])
         return ""
+    
+    async_rst = app.AsyncResult(task_id)
+    if async_rst.status != "SENT":
+        sr("404 NOT FOUND", [("Content-Type", "text/html")])
+        return "%s doesn't exist!"%task_id
     
     tmpl_env = Environment(loader = FileSystemLoader("./templates"))
     template = tmpl_env.get_template("run.html")

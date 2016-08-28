@@ -2,6 +2,8 @@ from celery import Celery, platforms
 from celery.utils.log import get_task_logger
 import json
 from jackals.const import TaskStatus
+from celery.signals import after_task_publish
+from celery._state import current_app
 
 app = Celery('ctasks')
 
@@ -66,12 +68,6 @@ def script_worker(self, script_file, *args, **kwargs):
     
     channel_name = taskid + "_logs"
     
-    conn.publish(channel_name, json.dumps({
-        "type": "STATUS",
-        "message": TaskStatus.RUNING,
-        "pid": p.pid
-    }))
-    
     logger.info("channel_name: %s"%channel_name)
     
     logger.info("start...")
@@ -83,6 +79,12 @@ def script_worker(self, script_file, *args, **kwargs):
         conn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
+        }))
+    
+        conn.publish(channel_name, json.dumps({
+            "type": "STATUS",
+            "message": TaskStatus.RUNING,
+            "pid": p.pid
         }))
         
         logger.info(line)
@@ -101,5 +103,17 @@ def script_worker(self, script_file, *args, **kwargs):
     logger.info("finish!!!")
     
     return p.poll()
+
+@after_task_publish.connect
+def update_sent_state(sender=None, body=None, **kwargs):
+    # the task may not exist if sent using `send_task` which
+    # sends tasks by name, so fall back to the default result backend
+    # if that is the case.
+    task = current_app.tasks.get(sender)
+    backend = task.backend if task else current_app.backend
+
+    backend.store_result(body['id'], None, "SENT")
+
+
 
     

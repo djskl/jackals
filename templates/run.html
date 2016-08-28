@@ -104,7 +104,11 @@
 		
 		{% include "js/utils.js" %}
 		{% include "js/dialogs.js" %}
-				
+		
+		var taskid = "{{taskid}}";
+		var script_pid = null;
+		var task_state = null;
+		
 		$(function(){
 			
 			/* 弹出框提示当前状态 */
@@ -114,9 +118,34 @@
 			
 			/* 终止当前任务 */
 			$("#stop-btn").on("click", function(){
-				if($("#stop-btn").prop("disabled")){
-					return;
+				
+				var params = {};
+				if(task_state == STATUS.RUNING){
+					params = {
+						"status": STATUS.RUNING,
+						"taskid": script_pid
+					}
+				}else if(task_state == STATUS.PENDING){
+					params = {
+						"status": STATUS.PENDING,
+						"taskid": taskid
+					}
 				}
+				
+				$.ajax({
+					url: "/stop_task",
+					type: 'POST',
+					data: params,
+					success: function(data){
+						$(".TASK-STATUS.active").removeClass("active");
+						$(".TASK-FAILED").addClass("active");
+						$("#stop-btn").prop("disabled", true);
+					},
+					error: function(xhr, code, what){
+						alert("任务终止失败！");
+					}
+				});
+				
 			});
 			
 		});
@@ -139,10 +168,12 @@
 			}
 			
 			if(obj.type == "STATUS"){
+				task_state = obj.message;
 				$(".TASK-STATUS.active").removeClass("active");
 				if(obj.message == STATUS.PENDING){
 					$(".TASK-PENDING").addClass("active");
 				}else if(obj.message == STATUS.RUNING){
+					script_pid = obj.pid;
 					$(".TASK-RUNNING").addClass("active");
 				}else if(obj.message == STATUS.FAILED){
 					$(".TASK-FAILED").addClass("active");
