@@ -1,0 +1,3 @@
+基于celery&websocket实现，celery负责执行python脚本，websocket负责在前端实时展示脚本日志
+
+
