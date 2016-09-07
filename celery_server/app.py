@@ -8,8 +8,8 @@ from celery._state import current_app
 app = Celery('ctasks')
 
 app.conf.update(
-    BROKER_URL = 'redis://localhost:6379/0',
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/1',
+    BROKER_URL = 'amqp://guest@localhost//',
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379',
     CELERY_TASK_SERIALIZER = 'json',
     CELERY_RESULT_SERIALIZER = 'json',
     CELERY_ACCEPT_CONTENT=['json']         

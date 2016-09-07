@@ -8,8 +8,6 @@ import json
 import signal
 
 from jackals.const import TaskStatus
-from jackals.celery_server.app import handle_error, handle_finish, script_worker,\
-    app
 
 from settings import SCRIPT_ROOT
 
