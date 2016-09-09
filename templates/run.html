@@ -106,7 +106,6 @@
 		{% include "js/dialogs.js" %}
 		
 		var taskid = "{{taskid}}";
-		var script_pid = null;
 		var task_state = null;
 		
 		$(function(){
@@ -117,25 +116,13 @@
 			});
 			
 			/* 终止当前任务 */
-			$("#stop-btn").on("click", function(){
-				
-				var params = {};
-				if(task_state == STATUS.RUNING){
-					params = {
-						"status": STATUS.RUNING,
-						"taskid": script_pid
-					}
-				}else if(task_state == STATUS.PENDING){
-					params = {
-						"status": STATUS.PENDING,
-						"taskid": taskid
-					}
-				}
-				
+			$("#stop-btn").on("click", function(){				
 				$.ajax({
 					url: "/stop_task",
 					type: 'POST',
-					data: params,
+					data: {
+						"taskid": taskid
+					},
 					success: function(data){
 						$(".TASK-STATUS.active").removeClass("active");
 						$(".TASK-FAILED").addClass("active");
@@ -173,7 +160,6 @@
 				if(obj.message == STATUS.PENDING){
 					$(".TASK-PENDING").addClass("active");
 				}else if(obj.message == STATUS.RUNING){
-					script_pid = obj.pid;
 					$(".TASK-RUNNING").addClass("active");
 				}else if(obj.message == STATUS.FAILED){
 					$(".TASK-FAILED").addClass("active");

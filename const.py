@@ -13,5 +13,6 @@ TaskStatus = Const("TaskStatus", (), {
     "PENDING": 1,
     "RUNING": 2,
     "FAILED": -1,
-    "TIMEOUT": -2                                     
+    "TIMEOUT": -2,
+    "KILLED": -3                                     
 })

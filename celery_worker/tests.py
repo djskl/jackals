@@ -1,9 +1,9 @@
 import unittest
 import os
-from celery_server.app import script_worker
 import uuid
 from channels import RedisChannel
 from time import sleep
+from celery_worker.tasks import script_worker
 
 class TestSubmitTask(unittest.TestCase):
     

@@ -5,7 +5,7 @@ Created on Jul 31, 2016
 '''
 import unittest
 from websocket_server.tests import TestWebsocket
-from celery_server.tests import TestSubmitTask
+from celery_worker.tests import TestSubmitTask
         
 if __name__ == "__main__":
     suite1 = unittest.TestLoader().loadTestsFromTestCase(TestWebsocket)

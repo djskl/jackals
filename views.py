@@ -5,9 +5,9 @@ import utils
 import uuid
 import os
 import json
-import signal
 
 from jackals.const import TaskStatus
+from jackals.taskmanager import execute_task, kill_task, task_exists
 
 from settings import SCRIPT_ROOT
 
@@ -46,8 +46,8 @@ def submit_task(env, rs):
     script_file = os.path.join(SCRIPT_ROOT, "%s.py"%taskid)
     with open(script_file, "w") as writer:
         writer.write(task_script)
-        
-    script_worker.apply_async([script_file], task_id=taskid, link = handle_finish.s(taskid), link_error = handle_error.s(taskid))
+    
+    execute_task(taskid, script_file)
     
     rs("200 OK", [("Content-Type", "application/json")])
     return json.dumps({
@@ -58,16 +58,10 @@ def submit_task(env, rs):
 
 def stop_task(env, sr):
     params = utils.parse_wsgi_post(env)
-    
     taskid = params.getvalue("taskid")
-    status = int(params.getvalue("status"))
     
-    if status == TaskStatus.PENDING:
-        app.control.revoke(str(taskid))
+    kill_task(taskid)
     
-    if status == TaskStatus.RUNING:
-        os.kill(int(taskid), signal.SIGKILL)
-        
     sr("200 OK", [("Content-Type", "text/html")])
     return ""    
 
@@ -80,8 +74,8 @@ def show_task(env, sr):
         sr("404 NOT FOUND", [("Content-Type", "text/html")])
         return ""
     
-    async_rst = app.AsyncResult(task_id)
-    if async_rst.status != "SENT":
+    exists = task_exists(task_id)
+    if not exists:
         sr("404 NOT FOUND", [("Content-Type", "text/html")])
         return "%s doesn't exist!"%task_id
     
