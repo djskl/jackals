@@ -47,7 +47,7 @@
 }
 
 /* 超时 */
-.TASK-TIMEOUT{
+.TASK-KILLED{
 	color: #aa6708;	/* 褐色 */
 	display: none;	
 }
@@ -79,19 +79,19 @@
 				<label>状态：</label>
 			</div>
 			<div class="col-md-11">
-				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-PENDING active"
+				<span class="{%if task_status==allStatus.PENDING%}active{% endif %} glyphicon glyphicon-certificate TASK-STATUS TASK-PENDING"
 				 data-toggle="popover" data-trigger="focus" data-content="正在排队"></span>
 				 
-				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-RUNNING"
+				<span class="{%if task_status==allStatus.RUNING%}active{% endif %} glyphicon glyphicon-certificate TASK-STATUS TASK-RUNNING"
 				 data-toggle="popover" data-trigger="focus" data-content="正在运行"></span>
 				 
-				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-FAILED"
+				<span class="{%if task_status==allStatus.FAILED%}active{% endif %} glyphicon glyphicon-certificate TASK-STATUS TASK-FAILED"
 				 data-toggle="popover" data-trigger="focus" data-content="失败"></span>
 				 
-				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-TIMEOUT"
-				 data-toggle="popover" data-trigger="focus" data-content="服务器响应超时"></span>
+				<span class="{%if task_status==allStatus.KILLED%}active{% endif %} glyphicon glyphicon-certificate TASK-STATUS TASK-KILLED"
+				 data-toggle="popover" data-trigger="focus" data-content="用户终止"></span>
 				 
-				<span class="glyphicon glyphicon-certificate TASK-STATUS TASK-SUCCESS"
+				<span class="{%if task_status==allStatus.SUCCESS%}active{% endif %} glyphicon glyphicon-certificate TASK-STATUS TASK-SUCCESS"
 				 data-toggle="popover" data-trigger="focus" data-content="成功"></span>
 			</div>
 		</div>
@@ -125,7 +125,7 @@
 					},
 					success: function(data){
 						$(".TASK-STATUS.active").removeClass("active");
-						$(".TASK-FAILED").addClass("active");
+						$(".TASK-KILLED").addClass("active");
 						$("#stop-btn").prop("disabled", true);
 					},
 					error: function(xhr, code, what){
@@ -164,8 +164,8 @@
 				}else if(obj.message == STATUS.FAILED){
 					$(".TASK-FAILED").addClass("active");
 					$("#stop-btn").prop("disabled", true);
-				}else if(obj.message == STATUS.TIMEOUT){
-					$(".TASK-TIMEOUT").addClass("active");
+				}else if(obj.message == STATUS.KILLED){
+					$(".TASK-KILLED").addClass("active");
 					$("#stop-btn").prop("disabled", true);
 				}else if(obj.message == STATUS.SUCCESS){
 					$(".TASK-SUCCESS").addClass("active");

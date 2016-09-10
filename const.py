@@ -4,10 +4,14 @@ class Const(type):
     def __setattr__(self, k, v):
         raise AttributeError(self.warning)
     
-    def list(self):
+    def toList(self):
         status = [(name, value) for name, value in self.__dict__.items() if not name.startswith('__')]
         return status
-
+    
+    def toDict(self):
+        status = {name: value for name, value in self.__dict__.items() if not name.startswith('__')}
+        return status
+        
 TaskStatus = Const("TaskStatus", (), {
     "SUCCESS": 0,
     "PENDING": 1,

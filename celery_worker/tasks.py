@@ -4,7 +4,7 @@ import subprocess
 import redis
 import json
 from celery.utils.log import get_task_logger
-from .worker import app
+from .worker import app, REDIS_BACKEND_URL
 
 
 logger = get_task_logger(__name__)
@@ -28,6 +28,8 @@ def script_worker(self, script_file, *args, **kwargs):
     if not script_file.endswith("py"):
         return -1
     
+    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    
     taskid = self.request.id
      
     _cmd = ["python", "-u", script_file] + [str(arg) for arg in args]
@@ -35,8 +37,7 @@ def script_worker(self, script_file, *args, **kwargs):
         _cmd.append("-"+k+" "+v)
         
     p = subprocess.Popen(_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-    conn = redis.StrictRedis()
+    rconn.hset("task:%s"%taskid, "subpid", p.pid)
     
     channel_name = taskid + "_logs"
     
@@ -48,7 +49,7 @@ def script_worker(self, script_file, *args, **kwargs):
         if line.endswith("\n"):
             line = line[:-1]
             
-        conn.publish(channel_name, json.dumps({
+        rconn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
         }))
@@ -59,7 +60,7 @@ def script_worker(self, script_file, *args, **kwargs):
         if line.endswith("\n"):
             line = line[:-1]
             
-        conn.publish(channel_name, json.dumps({
+        rconn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
         }))

@@ -7,11 +7,11 @@ import os
 import json
 
 from jackals.const import TaskStatus
-from jackals.taskmanager import execute_task, kill_task, task_exists
+from jackals.taskmanager import execute_task, task_exists, query_task, kill_task
 
 from settings import SCRIPT_ROOT
 
-import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.201409251235/pysrc')
+# import sys;sys.path.append(r'/usr/local/eclipse/plugins/org.python.pydev_3.8.0.201409251235/pysrc')
 # import pydevd;pydevd.settrace()
 
 def home(env, rs):
@@ -21,7 +21,7 @@ def home(env, rs):
         
     kwargs = {
         "server_name": env["HTTP_HOST"],
-        "all_status": TaskStatus.list()
+        "allStatus": TaskStatus.toDict()
     }
     html = template.render(**kwargs)
     html = html if isinstance(html, str) else html.encode("utf-8")
@@ -82,13 +82,15 @@ def show_task(env, sr):
     tmpl_env = Environment(loader = FileSystemLoader("./templates"))
     template = tmpl_env.get_template("run.html")
     
-    kwargs = {
-        "server_name": env["HTTP_HOST"],
+    task_info = query_task(task_id)
+    template_data = {
         "taskid": task_id,
         "title": task_id,
-        "all_status": TaskStatus.list()
+        "task_status": int(task_info.get("status", TaskStatus.PENDING)),
+        "server_name": env["HTTP_HOST"],
+        "allStatus": TaskStatus.toDict()
     }
-    html = template.render(**kwargs)
+    html = template.render(**template_data)
     html = html if isinstance(html, str) else html.encode("utf-8")
     
     sr("200 OK", [("Content-Type", "text/html")])

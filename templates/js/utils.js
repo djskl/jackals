@@ -1,10 +1,9 @@
 
 var STATUS = {
-	{% for st in all_status %}
-	{{st.0}}: {{st.1}},
+	{% for k, v in allStatus.items() %}
+	{{k}}: {{v}},
 	{% endfor %}
 };
-
 
 /*
  * usage:

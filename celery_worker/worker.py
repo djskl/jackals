@@ -57,13 +57,24 @@ def status_monitor(worker):
             "message": TaskStatus.RUNING
         }))
 
+        print "%s start to run"%taskid
+
     #task-succeeded: uuid, result, runtime, hostname, timestamp
     def task_succeeded(event):
         taskid = event["uuid"]    
         
         channel_name = taskid + "_logs"
-        
-        if event["result"] == "0":
+        rst = event["result"].strip()
+        if rst.startswith("'"):
+            rst = rst[1:]
+        if rst.endswith("'"):
+            rst = rst[:-1]
+        try:
+            rst = int(rst)
+        except ValueError:
+            rst = -1
+            
+        if rst == 0:
             rconn.hmset("task:%s"%taskid, {
                 "status": TaskStatus.SUCCESS,
                 "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
@@ -72,6 +83,7 @@ def status_monitor(worker):
                 "type": "STATUS",
                 "message": TaskStatus.SUCCESS
             }))
+            print "%s succeed"%taskid
         else:
             rconn.hmset("task:%s"%taskid, {
                 "status": TaskStatus.FAILED,
@@ -81,7 +93,7 @@ def status_monitor(worker):
                 "type": "STATUS",
                 "message": TaskStatus.FAILED
             }))
-            
+            print "%s failed!!!"%taskid
 
     #task-revoked(uuid, terminated, signum, expired)
     def task_revoked(event):
@@ -97,7 +109,8 @@ def status_monitor(worker):
             "type": "STATUS",
             "message": TaskStatus.KILLED
         }))
-
+        print "%s killed!!!"%taskid
+        
     #task-failed: uuid, exception, traceback, hostname, timestamp
     def task_failed(event):
         taskid = event["uuid"]    
@@ -112,7 +125,7 @@ def status_monitor(worker):
             "type": "STATUS",
             "message": TaskStatus.FAILED
         }))
-    
+        print "%s failed!!!"%taskid
     #worker-offline: hostname, timestamp, freq, sw_ident, sw_ver, sw_sys    
     def worker_offline(event):
         pass
