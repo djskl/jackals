@@ -11,6 +11,7 @@ pip install -r docs/requirements.txt
 ```
 cd celery_server
 celery worker -A app -l info
+python worker.py  #监视任务状态
 ```
 2 - 启动uwsgi
 ```
