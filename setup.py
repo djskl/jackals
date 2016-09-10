@@ -1,5 +1,6 @@
+#coding: utf-8
 
-#python jackals/setup.py install(or develop)
+#返回上一层执行：python jackals/setup.py install(or develop)
 
 from setuptools import setup, find_packages 
 
