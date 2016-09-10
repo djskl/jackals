@@ -4,7 +4,7 @@
 
 from setuptools import setup, find_packages 
 
-_packages = find_packages(where="..", exclude=["settings.py"])
+_packages = find_packages(where="..")
 
 setup (name='jackals',
        version='0.1',

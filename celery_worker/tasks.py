@@ -4,7 +4,8 @@ import subprocess
 import redis
 import json
 from celery.utils.log import get_task_logger
-from .worker import app, REDIS_BACKEND_URL
+from jackals.celery_worker.worker import app
+from jackals.settings import WEBSOCKET_REDIS_CHANNEL_URL, CELERY_BACKEND_URL
 
 
 logger = get_task_logger(__name__)
@@ -28,7 +29,8 @@ def script_worker(self, script_file, *args, **kwargs):
     if not script_file.endswith("py"):
         return -1
     
-    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    channel_conn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
+    backend_conn = redis.StrictRedis.from_url(CELERY_BACKEND_URL)
     
     taskid = self.request.id
      
@@ -37,7 +39,7 @@ def script_worker(self, script_file, *args, **kwargs):
         _cmd.append("-"+k+" "+v)
         
     p = subprocess.Popen(_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    rconn.hset("task:%s"%taskid, "subpid", p.pid)
+    backend_conn.hset("task:%s"%taskid, "subpid", p.pid)
     
     channel_name = taskid + "_logs"
     
@@ -49,7 +51,7 @@ def script_worker(self, script_file, *args, **kwargs):
         if line.endswith("\n"):
             line = line[:-1]
             
-        rconn.publish(channel_name, json.dumps({
+        channel_conn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
         }))
@@ -60,7 +62,7 @@ def script_worker(self, script_file, *args, **kwargs):
         if line.endswith("\n"):
             line = line[:-1]
             
-        rconn.publish(channel_name, json.dumps({
+        channel_conn.publish(channel_name, json.dumps({
             "type": "LOG",
             "message": line
         }))
