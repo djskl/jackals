@@ -1,2 +1,8 @@
 
+CELERY_AMQP_URL = 'amqp://guest@127.0.0.1//'
+
+CELERY_BACKEND_URL = 'redis://127.0.0.1:6379'
+
+WEBSOCKET_REDIS_CHANNEL_URL = 'redis://127.0.0.1:6379'
+
 SCRIPT_ROOT = "/tmp"

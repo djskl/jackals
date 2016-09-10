@@ -1,10 +1,11 @@
 import redis
 from jackals.utils import synchronized
+from jackals.settings import WEBSOCKET_REDIS_CHANNEL_URL
 
 class RedisChannel(object):
     
     def __init__(self):
-        self._redis_conn = redis.StrictRedis()
+        self._redis_conn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
         self._pubsub = self._redis_conn.pubsub()
     
     @synchronized

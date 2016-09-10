@@ -11,10 +11,7 @@ import time
 import redis
 from celery import Celery, platforms
 from jackals.const import TaskStatus
-
-AMQP_URL = 'amqp://guest@localhost//'
-REDIS_BACKEND_URL = 'redis://localhost:6379'
-
+from jackals.settings import CELERY_AMQP_URL, CELERY_BACKEND_URL
 app = Celery(
     'ctasks',
     include=['celery_worker.tasks']
@@ -23,8 +20,8 @@ app = Celery(
 platforms.C_FORCE_ROOT = True   #for root user
 
 app.conf.update(
-    BROKER_URL = AMQP_URL,
-    CELERY_RESULT_BACKEND = REDIS_BACKEND_URL,
+    BROKER_URL = CELERY_AMQP_URL,
+    CELERY_RESULT_BACKEND = CELERY_BACKEND_URL,
     CELERY_TASK_SERIALIZER = 'json',
     CELERY_RESULT_SERIALIZER = 'json',
     CELERY_ACCEPT_CONTENT=['json'],
