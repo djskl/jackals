@@ -35,7 +35,7 @@ def status_monitor(worker):
     task = state.tasks.get(event['uuid'])
     '''
 #     state = worker.events.State()
-    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    rconn = redis.StrictRedis.from_url(CELERY_BACKEND_URL)
     
     #task-started: uuid, hostname, timestamp, pid
     def task_started(event):
@@ -123,9 +123,18 @@ def status_monitor(worker):
             "message": TaskStatus.FAILED
         }))
         print "%s failed!!!"%taskid
-    #worker-offline: hostname, timestamp, freq, sw_ident, sw_ver, sw_sys    
+        
+    #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys    
     def worker_offline(event):
-        pass
+        print "worker_offline"
+    
+    #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys
+    def worker_online(event):
+        print "worker_online"
+        
+    #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys, active, processed
+    def worker_heartbeat(event):
+        print event["hostname"]
     
     with worker.connection() as connection:
         recv = worker.events.Receiver(
@@ -135,6 +144,9 @@ def status_monitor(worker):
                 'task-succeeded': task_succeeded,
                 'task-revoked': task_revoked,
                 'task-failed': task_failed,
+                
+                'worker-online': worker_online,
+                'worker-heartbeat': worker_heartbeat,
                 'worker-offline': worker_offline
             }
         )
