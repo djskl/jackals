@@ -1,8 +1,17 @@
 _cgi = __import__("cgi")
 _threading = __import__("threading")
 _urlparse = __import__("urlparse")
+_contextmanager = __import__("contextlib.contextmanager")
 
 __all__ = ["synchronized", "make_channel", "parse_wsgi_post", "parse_wsgi_get"]
+
+@_contextmanager
+def lockcontext(lock):
+    lock.acquire()
+    try:
+        yield
+    finally:
+        lock.release()
 
 def synchronized(func):
     

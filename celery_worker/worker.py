@@ -10,8 +10,11 @@ import json
 import time
 import redis
 from celery import Celery, platforms
+from celery import states
 from jackals.const import TaskStatus
-from jackals.settings import CELERY_AMQP_URL, CELERY_BACKEND_URL
+from jackals.settings import CELERY_AMQP_URL, CELERY_BACKEND_URL,WEBSOCKET_REDIS_CHANNEL_URL
+from jackals.utils import lockcontext
+
 app = Celery(
     'ctasks',
     include=['celery_worker.tasks']
@@ -35,21 +38,30 @@ def status_monitor(worker):
     task = state.tasks.get(event['uuid'])
     '''
 #     state = worker.events.State()
-    rconn = redis.StrictRedis.from_url(CELERY_BACKEND_URL)
+
+    MAX_LOST = 5    #允许丢失的heartbeat信号次数
+    live_nodes = {}
+    
+    data_conn = redis.StrictRedis.from_url(CELERY_BACKEND_URL)
+    chan_conn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
+    
+    _lock = data_conn.lock("node")
     
     #task-started: uuid, hostname, timestamp, pid
     def task_started(event):
         taskid = event["uuid"]        
         
-        rconn.hmset("task:%s"%taskid, {
+        data_conn.hmset("task:%s"%taskid, {
             "pid": event["pid"],
             "status": TaskStatus.RUNING,
             "host": event["hostname"],
             "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
         })
         
+        data_conn.rpush("nodes:%s"%event["hostname"], taskid)
+        
         channel_name = taskid + "_logs"
-        rconn.publish(channel_name, json.dumps({
+        chan_conn.publish(channel_name, json.dumps({
             "type": "STATUS",
             "message": TaskStatus.RUNING
         }))
@@ -72,37 +84,39 @@ def status_monitor(worker):
             rst = -1
             
         if rst == 0:
-            rconn.hmset("task:%s"%taskid, {
+            data_conn.hmset("task:%s"%taskid, {
                 "status": TaskStatus.SUCCESS,
                 "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
             })
-            rconn.publish(channel_name, json.dumps({
+            chan_conn.publish(channel_name, json.dumps({
                 "type": "STATUS",
                 "message": TaskStatus.SUCCESS
             }))
             print "%s succeed"%taskid
         else:
-            rconn.hmset("task:%s"%taskid, {
+            data_conn.hmset("task:%s"%taskid, {
                 "status": TaskStatus.FAILED,
                 "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
             })
-            rconn.publish(channel_name, json.dumps({
+            chan_conn.publish(channel_name, json.dumps({
                 "type": "STATUS",
                 "message": TaskStatus.FAILED
             }))
             print "%s failed!!!"%taskid
-
+            
+        data_conn.lrem("nodes:%s"%event["hostname"], taskid, 0)
+            
     #task-revoked(uuid, terminated, signum, expired)
     def task_revoked(event):
         taskid = event["uuid"]    
         
-        rconn.hmset("task:%s"%taskid, {
+        data_conn.hmset("task:%s"%taskid, {
             "status": TaskStatus.KILLED,
             "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         })
         
         channel_name = taskid + "_logs"
-        rconn.publish(channel_name, json.dumps({
+        chan_conn.publish(channel_name, json.dumps({
             "type": "STATUS",
             "message": TaskStatus.KILLED
         }))
@@ -112,30 +126,68 @@ def status_monitor(worker):
     def task_failed(event):
         taskid = event["uuid"]    
         
-        rconn.hmset("task:%s"%taskid, {
+        data_conn.hmset("task:%s"%taskid, {
             "status": TaskStatus.FAILED,
             "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
         })
         
         channel_name = taskid + "_logs"
-        rconn.publish(channel_name, json.dumps({
+        chan_conn.publish(channel_name, json.dumps({
             "type": "STATUS",
             "message": TaskStatus.FAILED
         }))
         print "%s failed!!!"%taskid
+        data_conn.lrem("nodes:%s"%event["hostname"], taskid, 0)
         
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys    
     def worker_offline(event):
-        print "worker_offline"
-    
+        '''
+        如果结点所在宿主机突然断电或着所在容器被杀死，
+        offline事件不会被检测到，只有celery woker进程退出(被杀死)时才会被检测到
+        如果结点掉线了，直接将该结点上的task全部标为失败。
+        '''
+        with lockcontext(_lock):
+            for taskid in data_conn.lrange("nodes:%s"%event["hostname"], 0, -1):
+                #task_id, result, status, traceback=None, request=None, **kwargs
+                app.backend.store_result(taskid, None, states.FAILURE)  
+                data_conn.hmset("task:%s"%taskid, {
+                    "status": TaskStatus.FAILED,
+                    "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
+                })
+            data_conn.delete("nodes:%s"%event["hostname"])
+            del live_nodes[event["hostname"]]
+            
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys
     def worker_online(event):
-        print "worker_online"
+        '''
+        新增结点
+        '''
+        live_nodes[event["hostname"]] = MAX_LOST
         
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys, active, processed
     def worker_heartbeat(event):
-        print event["hostname"]
+        '''
+        心跳检测，2秒一次
+        '''
+        for host, times in live_nodes.items():
+            if times >= MAX_LOST:
+                continue
+            
+            if 0 < times < MAX_LOST:
+                live_nodes[host] += 1 
     
+            if times < 1:
+                with lockcontext(_lock):
+                    for taskid in data_conn.lrange("nodes:%s"%event["hostname"], 0, -1):
+                        #task_id, result, status, traceback=None, request=None, **kwargs
+                        app.backend.store_result(taskid, None, states.FAILURE)  
+                        data_conn.hmset("task:%s"%taskid, {
+                            "status": TaskStatus.FAILED,
+                            "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
+                        })
+                    data_conn.delete("nodes:%s"%event["hostname"])
+                del live_nodes[host]
+                    
     with worker.connection() as connection:
         recv = worker.events.Receiver(
             connection,
