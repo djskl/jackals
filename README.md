@@ -11,6 +11,7 @@ pip install -r docs/requirements.txt
 ```
 cd celery_server
 celery worker -A app -l info
+python worker.py  #监视任务状态
 ```
 2 - 启动uwsgi
 ```
@@ -18,7 +19,7 @@ uwsgi --ini uws.ini
 ```
 
 ## TODO
-- [ ] 任务状态优化
+- [x] 任务状态优化
 - [ ] HA测试
 - [ ] 性能测试
 
