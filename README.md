@@ -20,7 +20,6 @@ uwsgi --ini uws.ini
 
 ## TODO
 - [x] 任务状态优化
-- [ ] HA测试
-- [ ] 性能测试
+- [x] HA测试
 
 
