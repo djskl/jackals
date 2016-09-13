@@ -13,7 +13,6 @@ from celery import Celery, platforms
 from celery import states
 from jackals.const import TaskStatus
 from jackals.settings import CELERY_AMQP_URL, CELERY_BACKEND_URL,WEBSOCKET_REDIS_CHANNEL_URL
-from jackals.utils import lockcontext
 
 app = Celery(
     'ctasks',
@@ -45,8 +44,25 @@ def status_monitor(worker):
     data_conn = redis.StrictRedis.from_url(CELERY_BACKEND_URL)
     chan_conn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     
-    _lock = data_conn.lock("node")
-    
+    def handle_node_off(host, timestamp):
+        print host, "offline"
+        node_key = "nodes:%s"%host
+        for taskid in data_conn.lrange(node_key, 0, -1):
+            #task_id, result, status, traceback=None, request=None, **kwargs
+            app.backend.store_result(taskid, None, states.FAILURE) 
+            def _down_worker(pipe):
+                pipe.multi()
+                pipe.hmset(taskid, {
+                    "status": TaskStatus.FAILED,
+                    "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+                }) 
+            data_conn.transaction(_down_worker, "task:%s"%taskid)
+        data_conn.delete(node_key)
+        try:
+            del live_nodes[host]
+        except KeyError:
+            pass
+        
     #task-started: uuid, hostname, timestamp, pid
     def task_started(event):
         taskid = event["uuid"]        
@@ -146,22 +162,14 @@ def status_monitor(worker):
         offline事件不会被检测到，只有celery woker进程退出(被杀死)时才会被检测到
         如果结点掉线了，直接将该结点上的task全部标为失败。
         '''
-        with lockcontext(_lock):
-            for taskid in data_conn.lrange("nodes:%s"%event["hostname"], 0, -1):
-                #task_id, result, status, traceback=None, request=None, **kwargs
-                app.backend.store_result(taskid, None, states.FAILURE)  
-                data_conn.hmset("task:%s"%taskid, {
-                    "status": TaskStatus.FAILED,
-                    "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
-                })
-            data_conn.delete("nodes:%s"%event["hostname"])
-            del live_nodes[event["hostname"]]
-            
+        handle_node_off(event["hostname"], event["timestamp"])
+        
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys
     def worker_online(event):
         '''
         新增结点
         '''
+        print event["hostname"], "online"
         live_nodes[event["hostname"]] = MAX_LOST
         
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys, active, processed
@@ -169,25 +177,15 @@ def status_monitor(worker):
         '''
         心跳检测，2秒一次
         '''
+        for host in live_nodes:
+            live_nodes[host] -= 1
+        
+        live_nodes[event["hostname"]] = MAX_LOST
+        
         for host, times in live_nodes.items():
-            if times >= MAX_LOST:
-                continue
-            
-            if 0 < times < MAX_LOST:
-                live_nodes[host] += 1 
-    
             if times < 1:
-                with lockcontext(_lock):
-                    for taskid in data_conn.lrange("nodes:%s"%event["hostname"], 0, -1):
-                        #task_id, result, status, traceback=None, request=None, **kwargs
-                        app.backend.store_result(taskid, None, states.FAILURE)  
-                        data_conn.hmset("task:%s"%taskid, {
-                            "status": TaskStatus.FAILED,
-                            "stime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(event["timestamp"]))
-                        })
-                    data_conn.delete("nodes:%s"%event["hostname"])
-                del live_nodes[host]
-                    
+                handle_node_off(host, event["timestamp"])
+                                    
     with worker.connection() as connection:
         recv = worker.events.Receiver(
             connection,
