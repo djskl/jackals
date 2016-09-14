@@ -5,4 +5,4 @@ CELERY_BACKEND_URL = 'redis://192.168.1.106:6379'
 
 WEBSOCKET_REDIS_CHANNEL_URL = 'redis://192.168.1.106:6379'
 
-SCRIPT_ROOT = "/tmp"
+SCRIPT_ROOT = "/worker_scripts"

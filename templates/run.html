@@ -68,7 +68,8 @@
 				<div class="panel panel-default">
 					<div class="panel-heading" style="padding-top: 5px;height: 40px;">
 						<h3 class="panel-title" style="display: inline-block;padding-top: 5px;">任务：{{title}}</h3>
-						<button id="stop-btn" type="button" class="btn btn-sm btn-danger" style="display: inline-block;float:right;">停止</button>
+						<button id="stop-btn" type="button" class="btn btn-sm btn-danger"
+						 style="display: inline-block;float:right;" {%if task_status==allStatus.FAILED%}disabled{% endif %}>停止</button>
 					</div>
 					<div id="blackboard" class="panel-body"></div>
 				</div>

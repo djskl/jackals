@@ -5,13 +5,14 @@ Created on Sep 7, 2016
 '''
 import time
 import redis
+from jackals.settings import WEBSOCKET_REDIS_CHANNEL_URL
 from jackals.celery_worker.tasks import script_worker
-from jackals.celery_worker.worker import app, REDIS_BACKEND_URL
+from jackals.celery_worker.worker import app
 from jackals.const import TaskStatus
 
 def execute_task(taskid, script_file):
     
-    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     
     rconn.hmset("task:%s"%taskid, {
         "status": TaskStatus.PENDING,
@@ -23,7 +24,7 @@ def execute_task(taskid, script_file):
 def kill_task(taskid):
     task_info = query_task(taskid)
     if int(task_info["status"]) == TaskStatus.PENDING:
-        rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+        rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
         rconn.hmset("task:%s"%taskid, {
             "status": TaskStatus.FAILED,
             "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -33,7 +34,7 @@ def kill_task(taskid):
 def query_task(taskid):        
 #     ins = app.control.inspect()
 #     info = ins.query_task(taskid)
-    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     task_key = "task:%s"%taskid
     
     task_info = rconn.hgetall(task_key)
@@ -41,7 +42,7 @@ def query_task(taskid):
     return task_info
 
 def task_exists(taskid):
-    rconn = redis.StrictRedis.from_url(REDIS_BACKEND_URL)
+    rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     task_key = "task:%s"%taskid
     
     return rconn.exists(task_key)
