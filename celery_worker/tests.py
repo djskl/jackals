@@ -1,9 +1,10 @@
 import unittest
 import os
 import uuid
-from channels import RedisChannel
 from time import sleep
-from celery_worker.tasks import script_worker
+from jackals.celery_worker.tasks import script_worker
+from jackals.channels import RedisChannel
+import json
 
 class TestSubmitTask(unittest.TestCase):
     
@@ -30,7 +31,10 @@ class TestSubmitTask(unittest.TestCase):
         
         msg = chan.get_message(channel_name)
         
-        self.assertEqual(msg, "hello,world")
+        if msg:
+            msg = json.loads(msg)
+          
+        self.assertEqual(msg.get("message", None), "hello,world")
         
         
 if __name__ == "__main__":

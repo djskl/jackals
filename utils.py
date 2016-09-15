@@ -2,7 +2,7 @@ _cgi = __import__("cgi")
 _threading = __import__("threading")
 _urlparse = __import__("urlparse")
 
-__all__ = ["synchronized", "make_channel", "parse_wsgi_post", "parse_wsgi_get"]
+__all__ = ["synchronized", "parse_wsgi_post", "parse_wsgi_get"]
 
 
 def synchronized(func):
@@ -17,19 +17,6 @@ def synchronized(func):
             _lock.release()
             
     return _wraper
-
-CHANNEL_PREFIX = "WEBSOCKET"
-def make_channel(path_info):
-    if path_info.startswith("/"):
-        path_info = path_info[1:]
-        
-    if path_info.endswith("/"):
-        path_info = path_info[:-1]
-    
-    if not path_info:
-        return None
-    
-    return "%s_%s"%(CHANNEL_PREFIX, "_".join(path_info.split("_")))
 
 def parse_wsgi_post(env):
     

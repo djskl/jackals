@@ -1,7 +1,6 @@
 import unittest
 import redis
 from websocket import create_connection
-from utils import make_channel
 
 class TestWebsocket(unittest.TestCase):
 
@@ -19,8 +18,7 @@ class TestWebsocket(unittest.TestCase):
         self.assertEqual(length, len(msg)+6)
         
     def test_redis_channel(self):
-        self._channel = make_channel(self.path_info)
-        self.redis_conn.publish(self._channel, "hello")
+        self.redis_conn.publish("foobar_logs", "hello")
                 
         msg = self.ws_client.recv() # TODO: timeout
         
