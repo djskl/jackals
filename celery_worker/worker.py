@@ -120,7 +120,7 @@ def status_monitor(worker):
             }))
             print "%s failed!!!"%taskid
             
-        data_conn.lrem("nodes:%s"%event["hostname"], taskid)
+        data_conn.lrem("nodes:%s"%event["hostname"], 0, taskid)
             
     #task-revoked(uuid, terminated, signum, expired)
     def task_revoked(event):
@@ -153,7 +153,7 @@ def status_monitor(worker):
             "message": TaskStatus.FAILED
         }))
         print "%s failed!!!"%taskid
-        data_conn.lrem("nodes:%s"%event["hostname"], taskid, 0)
+        data_conn.lrem("nodes:%s"%event["hostname"], 0, taskid)
         
     #hostname, timestamp, freq, sw_ident, sw_ver, sw_sys    
     def worker_offline(event):
