@@ -5,7 +5,6 @@ import utils
 import uuid
 import os
 import json
-
 from jackals.const import TaskStatus
 from jackals.taskmanager import execute_task, task_exists, query_task, kill_task
 

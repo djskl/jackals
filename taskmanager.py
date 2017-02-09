@@ -26,7 +26,7 @@ def kill_task(taskid):
     if int(task_info["status"]) == TaskStatus.PENDING:
         rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
         rconn.hmset("task:%s"%taskid, {
-            "status": TaskStatus.FAILED,
+            "status": TaskStatus.KILLED,
             "ftime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         })
     app.control.revoke(taskid, terminate=True)
@@ -36,15 +36,12 @@ def query_task(taskid):
 #     info = ins.query_task(taskid)
     rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     task_key = "task:%s"%taskid
-    
     task_info = rconn.hgetall(task_key)
-    
     return task_info
 
 def task_exists(taskid):
     rconn = redis.StrictRedis.from_url(WEBSOCKET_REDIS_CHANNEL_URL)
     task_key = "task:%s"%taskid
-    
     return rconn.exists(task_key)
     
     

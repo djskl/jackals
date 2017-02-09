@@ -1,4 +1,6 @@
-_cgi = __import__("cgi")
+#encoding: utf-8
+
+_cgi = __import__("cgi")    #防止被from utils import *引入
 _threading = __import__("threading")
 _urlparse = __import__("urlparse")
 
